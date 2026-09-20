@@ -23,6 +23,7 @@ public class AuthService {
      */
     public User register(String fullName, String phone, String email, String password)
             throws SQLException {
+        email = email.trim().toLowerCase();
         if (userDAO.findByEmail(email).isPresent())
             throw new IllegalArgumentException("An account with this email already exists.");
         String salt = PasswordUtil.generateSalt();
@@ -39,6 +40,7 @@ public class AuthService {
      * @throws IllegalArgumentException if email not found or password incorrect
      */
     public User login(String email, String password) throws SQLException {
+        email = email.trim().toLowerCase();
         Optional<User> opt = userDAO.findByEmail(email);
         if (opt.isEmpty())
             throw new IllegalArgumentException("No account found with that email.");

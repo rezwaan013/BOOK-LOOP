@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.bookloop.controller.BrowseController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Browse Books" styleClass="page-title"/>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <TextField fx:id="searchField" promptText="Search by title or author..." HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
+        <Button text="Search" onAction="#handleSearch"/>
+        <Button text="Clear" onAction="#handleClearSearch"/>
+        <Label text="Duration:"/>
+        <ComboBox fx:id="durationComboBox"/>
+        <Label text="days"/>
+    </HBox>
+    <Label fx:id="emptyLabel" text="No books available from other users." visible="false"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox fx:id="booksContainer" spacing="10"/>
+    </ScrollPane>
+</VBox>

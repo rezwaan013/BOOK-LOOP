@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.bookloop.controller.MyBooksController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="My Library" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="+ Add Book" onAction="#toggleAddForm" styleClass="primary-button"/>
+    </HBox>
+    <VBox fx:id="addBookForm" spacing="8">
+        <TextField fx:id="titleField" promptText="Title *"/>
+        <TextField fx:id="authorField" promptText="Author *"/>
+        <TextField fx:id="publisherField" promptText="Publisher"/>
+        <HBox spacing="8">
+            <TextField fx:id="isbnField" promptText="ISBN (optional)" HBox.hgrow="ALWAYS"/>
+            <Button text="Fetch Details" onAction="#handleFetchDetails"/>
+        </HBox>
+        <Label fx:id="statusLabel" styleClass="error-label"/>
+        <Button text="Save Book" onAction="#handleAddBook" styleClass="primary-button"/>
+        <Separator/>
+    </VBox>
+    <Label fx:id="emptyLabel" text="No books yet. Click + Add Book to add one!"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox fx:id="booksContainer" spacing="10"/>
+    </ScrollPane>
+</VBox>

@@ -1,0 +1,100 @@
+/* General styles */
+.root-pane {
+    -fx-background-color: #f4f7f6;
+}
+
+/* Sidebar styles */
+.sidebar {
+    -fx-background-color: #2c3e50;
+}
+
+.sidebar-header {
+    -fx-alignment: center;
+}
+
+.sidebar-title {
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.sidebar-tagline {
+    -fx-text-fill: #bdc3c7;
+    -fx-font-size: 12px;
+}
+
+.sidebar-separator {
+    -fx-opacity: 0.2;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ecf0f1;
+    -fx-alignment: center-left;
+    -fx-padding: 12 16;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: #34495e;
+}
+
+.nav-button:pressed {
+    -fx-background-color: #1a252f;
+}
+
+.logout-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 16;
+    -fx-cursor: hand;
+}
+
+.logout-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+.user-name-label {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* Notifications */
+.notification-badge {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 6;
+    -fx-background-radius: 10;
+}
+
+/* Content Area */
+.content-area {
+    -fx-background-color: white;
+}
+
+/* Forms & Inputs */
+.text-field {
+    -fx-padding: 8;
+    -fx-background-radius: 4;
+}
+
+.primary-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-background-radius: 4;
+}
+
+.primary-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.error-label {
+    -fx-text-fill: #e74c3c;
+}

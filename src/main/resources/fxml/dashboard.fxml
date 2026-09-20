@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bookloop.controller.DashboardController"
+            styleClass="root-pane">
+
+    <!-- =================== SIDEBAR =================== -->
+    <left>
+        <VBox styleClass="sidebar" minWidth="220" maxWidth="220" prefWidth="220">
+
+            <!-- App Header -->
+            <VBox alignment="CENTER" spacing="4" styleClass="sidebar-header">
+                <VBox.margin><Insets top="24" bottom="16"/></VBox.margin>
+                <Label text="📚" style="-fx-font-size: 38px;"/>
+                <Label text="BookLoop" styleClass="sidebar-title"/>
+                <Label text="Book Lending Network" styleClass="sidebar-tagline"/>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <!-- Navigation Buttons -->
+            <VBox spacing="4" styleClass="nav-container">
+                <VBox.margin><Insets top="16" right="12" bottom="8" left="12"/></VBox.margin>
+
+                <Button fx:id="myBooksBtn" text="📚   My Library"
+                        onAction="#handleMyBooks"
+                        styleClass="nav-button" maxWidth="Infinity"/>
+
+                <Button fx:id="browseBooksBtn" text="🔍   Browse Books"
+                        onAction="#handleBrowseBooks"
+                        styleClass="nav-button" maxWidth="Infinity"/>
+
+                <Button fx:id="requestsBtn" text="📋   Requests"
+                        onAction="#handleRequests"
+                        styleClass="nav-button" maxWidth="Infinity"/>
+
+                <!-- Notification button with unread badge overlay -->
+                <StackPane alignment="TOP_RIGHT">
+                    <Button fx:id="notificationsBtn" text="🔔   Notifications"
+                            onAction="#handleNotifications"
+                            styleClass="nav-button" maxWidth="Infinity"/>
+                    <Label fx:id="notificationBadge" text="0"
+                           styleClass="notification-badge"
+                           visible="false" mouseTransparent="true">
+                        <StackPane.margin><Insets top="6" right="6"/></StackPane.margin>
+                    </Label>
+                </StackPane>
+            </VBox>
+
+            <!-- Spacer pushes footer to bottom -->
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- User Info + Logout -->
+            <VBox styleClass="sidebar-footer" spacing="8">
+                <VBox.margin><Insets right="12" bottom="20" left="12"/></VBox.margin>
+                <Separator styleClass="sidebar-separator"/>
+                <VBox.margin><Insets top="8" right="12" bottom="0" left="12"/></VBox.margin>
+                <Label text="Signed in as" styleClass="sidebar-tagline"/>
+                <Label fx:id="userNameLabel" styleClass="user-name-label" wrapText="true"/>
+                <Button text="⏻   Logout" onAction="#handleLogout"
+                        styleClass="logout-button" maxWidth="Infinity"/>
+            </VBox>
+
+        </VBox>
+    </left>
+
+    <!-- =================== CONTENT AREA =================== -->
+    <center>
+        <AnchorPane fx:id="contentArea" styleClass="content-area"/>
+    </center>
+
+</BorderPane>

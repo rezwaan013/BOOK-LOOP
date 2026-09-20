@@ -40,7 +40,7 @@ public final class NavigationUtil {
             Parent root = loader.load();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(
-                    NavigationUtil.class.getResource("/css/styles.css").toExternalForm());
+                    NavigationUtil.class.getResource("/style.css").toExternalForm());
             primaryStage.setScene(scene);
             primaryStage.setTitle(title);
         } catch (IOException e) {

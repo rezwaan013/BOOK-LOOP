@@ -50,6 +50,12 @@ public class BookService {
         }
 
         bookDAO.save(book);
+        // Reward: +10 pts for contributing a book
+        try {
+            int updated = new com.bookloop.dao.UserDAO().addPoints(ownerId, 10);
+            com.bookloop.model.User current = com.bookloop.util.SessionManager.getCurrentUser();
+            if (current != null && current.getId() == ownerId) current.setRewardPoints(updated);
+        } catch (SQLException ignored) {}
         return book;
     }
 

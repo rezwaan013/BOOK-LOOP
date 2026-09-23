@@ -14,6 +14,7 @@ public class User {
     private String email;
     private String passwordHash;
     private String salt;
+    private int rewardPoints = 0;
     private LocalDateTime createdAt;
 
     public User() {}
@@ -44,6 +45,9 @@ public class User {
 
     public String getSalt() { return salt; }
     public void setSalt(String salt) { this.salt = salt; }
+
+    public int getRewardPoints() { return rewardPoints; }
+    public void setRewardPoints(int rewardPoints) { this.rewardPoints = rewardPoints; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

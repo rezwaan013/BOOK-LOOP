@@ -3,8 +3,10 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.bookloop.controller.NotificationsController" spacing="12">
+      fx:controller="com.bookloop.controller.NotificationsController" spacing="12"
+      alignment="TOP_CENTER" styleClass="page-container">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <VBox maxWidth="720" spacing="12" styleClass="page-inner">
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Notifications" styleClass="page-title"/>
         <Region HBox.hgrow="ALWAYS"/>
@@ -14,4 +16,5 @@
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
         <VBox fx:id="notificationsContainer" spacing="10"/>
     </ScrollPane>
+    </VBox>
 </VBox>

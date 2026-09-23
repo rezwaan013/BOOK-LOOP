@@ -53,6 +53,7 @@ public class DatabaseManager {
                 email         TEXT    UNIQUE NOT NULL,
                 password_hash TEXT    NOT NULL,
                 salt          TEXT    NOT NULL,
+                reward_points INTEGER NOT NULL DEFAULT 0,
                 created_at    TEXT    DEFAULT (datetime('now'))
             )
             """,
@@ -93,6 +94,21 @@ public class DatabaseManager {
         };
         try (Statement st = connection.createStatement()) {
             for (String sql : ddl) st.execute(sql);
+            // Migrate existing databases: add reward_points if missing, backfill 50 pts
+            try {
+                boolean hasCol = false;
+                try (ResultSet rs = st.executeQuery("PRAGMA table_info(users)")) {
+                    while (rs.next()) {
+                        if ("reward_points".equalsIgnoreCase(rs.getString("name"))) { hasCol = true; break; }
+                    }
+                }
+                if (!hasCol) {
+                    st.execute("ALTER TABLE users ADD COLUMN reward_points INTEGER NOT NULL DEFAULT 0");
+                    st.execute("UPDATE users SET reward_points = 50 WHERE reward_points = 0");
+                }
+            } catch (SQLException e) {
+                LOGGER.warning("Reward points migration: " + e.getMessage());
+            }
         }
         LOGGER.info("Schema verified.");
     }

@@ -87,8 +87,10 @@ public class BrowseController {
 
     private void handleBorrowRequest(Book book) {
         int duration = durationComboBox.getValue();
+        int balance = SessionManager.getCurrentUser().getRewardPoints();
         if (!AlertUtil.showConfirm("Borrow Request",
-                "Request to borrow \"" + book.getTitle() + "\" for " + duration + " days?")) return;
+                "Request to borrow \"" + book.getTitle() + "\" for " + duration + " days?\nCost: "
+                + duration + " pts (balance: " + balance + " pts)")) return;
         try {
             String name = SessionManager.getCurrentUser().getFullName();
             int    uid  = SessionManager.getCurrentUser().getId();

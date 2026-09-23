@@ -14,6 +14,7 @@ public class DashboardController {
 
     @FXML private Label       userNameLabel;
     @FXML private Label       notificationBadge;
+    @FXML private Label       pointsLabel;
     @FXML private AnchorPane  contentArea;
     @FXML private Button      myBooksBtn;
     @FXML private Button      browseBooksBtn;
@@ -25,8 +26,10 @@ public class DashboardController {
 
     @FXML
     private void initialize() {
-        if (SessionManager.getCurrentUser() != null)
+        if (SessionManager.getCurrentUser() != null) {
             userNameLabel.setText(SessionManager.getCurrentUser().getFullName());
+            refreshPoints();
+        }
 
         int userId = SessionManager.getCurrentUser().getId();
         NotificationPoller.start(userId, count -> {
@@ -41,9 +44,15 @@ public class DashboardController {
         handleMyBooks(); // default view
     }
 
-    @FXML private void handleMyBooks()      { setActive(myBooksBtn);      NavigationUtil.loadInto(contentArea, "my_books"); }
-    @FXML private void handleBrowseBooks()  { setActive(browseBooksBtn);  NavigationUtil.loadInto(contentArea, "browse"); }
-    @FXML private void handleRequests()     { setActive(requestsBtn);     NavigationUtil.loadInto(contentArea, "requests"); }
+    @FXML private void handleMyBooks()      { setActive(myBooksBtn);      NavigationUtil.loadInto(contentArea, "my_books"); refreshPoints(); }
+    @FXML private void handleBrowseBooks()  { setActive(browseBooksBtn);  NavigationUtil.loadInto(contentArea, "browse"); refreshPoints(); }
+    @FXML private void handleRequests()     { setActive(requestsBtn);     NavigationUtil.loadInto(contentArea, "requests"); refreshPoints(); }
+
+    /** Refreshes the reward-points badge from the session user. */
+    public void refreshPoints() {
+        if (pointsLabel != null && SessionManager.getCurrentUser() != null)
+            pointsLabel.setText("★ " + SessionManager.getCurrentUser().getRewardPoints() + " pts");
+    }
 
     @FXML
     private void handleNotifications() {

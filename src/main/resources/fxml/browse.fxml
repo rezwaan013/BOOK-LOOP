@@ -3,9 +3,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.bookloop.controller.BrowseController" spacing="12">
+      fx:controller="com.bookloop.controller.BrowseController" spacing="12"
+      alignment="TOP_CENTER" styleClass="page-container">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <VBox maxWidth="720" spacing="12" styleClass="page-inner">
     <Label text="Browse Books" styleClass="page-title"/>
+    <Label text="Borrowing costs 1 pt/day  •  7 days = 7 pts, 14 = 14 pts, 21 = 21 pts" styleClass="book-meta"/>
     <HBox spacing="8" alignment="CENTER_LEFT">
         <TextField fx:id="searchField" promptText="Search by title or author..." HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
         <Button text="Search" onAction="#handleSearch"/>
@@ -18,4 +21,5 @@
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
         <VBox fx:id="booksContainer" spacing="10"/>
     </ScrollPane>
+    </VBox>
 </VBox>

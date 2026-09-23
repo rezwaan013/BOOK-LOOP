@@ -61,6 +61,7 @@
                 <VBox.margin><Insets top="8" right="12" bottom="0" left="12"/></VBox.margin>
                 <Label text="Signed in as" styleClass="sidebar-tagline"/>
                 <Label fx:id="userNameLabel" styleClass="user-name-label" wrapText="true"/>
+                <Label fx:id="pointsLabel" text="★ 0 pts" styleClass="points-badge"/>
                 <Button text="⏻   Logout" onAction="#handleLogout"
                         styleClass="logout-button" maxWidth="Infinity"/>
             </VBox>

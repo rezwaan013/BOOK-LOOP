@@ -38,6 +38,16 @@ public class BorrowService {
         if (!book.isAvailable())        throw new IllegalStateException("This book is not currently available.");
         if (book.getOwnerId() == requesterId) throw new IllegalArgumentException("You cannot borrow your own book.");
 
+        // Reward cost: 1 point per day (7 days = 7 pts, 14 = 14, 21 = 21)
+        int cost = durationDays;
+        com.bookloop.dao.UserDAO userDAO = new com.bookloop.dao.UserDAO();
+        int balance = userDAO.findById(requesterId).map(com.bookloop.model.User::getRewardPoints).orElse(0);
+        if (balance < cost)
+            throw new IllegalStateException("Not enough reward points. Need " + cost + " pts, you have " + balance + " pts.");
+        userDAO.addPoints(requesterId, -cost);
+        com.bookloop.model.User current = com.bookloop.util.SessionManager.getCurrentUser();
+        if (current != null && current.getId() == requesterId) current.setRewardPoints(balance - cost);
+
         BorrowRequest req = new BorrowRequest();
         req.setBookId(bookId);
         req.setRequesterId(requesterId);

@@ -1,11 +1,9 @@
 package com.bookloop.controller;
 
 import com.bookloop.model.Book;
-import com.bookloop.service.BookApiService;
 import com.bookloop.service.BookService;
 import com.bookloop.util.AlertUtil;
 import com.bookloop.util.SessionManager;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -23,20 +21,21 @@ public class MyBooksController {
     @FXML private TextField titleField;
     @FXML private TextField authorField;
     @FXML private TextField publisherField;
-    @FXML private TextField isbnField;
     @FXML private TextField addressField;
+    @FXML private ComboBox<String> categoryComboBox;
     @FXML private Label     statusLabel;
     @FXML private VBox      addBookForm;
     @FXML private Label     emptyLabel;
 
-    private final BookService    bookService = new BookService();
-    private final BookApiService apiService  = new BookApiService();
+    private final BookService bookService = new BookService();
 
     @FXML
     private void initialize() {
         statusLabel.setVisible(false);
         addBookForm.setVisible(false);
         addBookForm.setManaged(false);
+        categoryComboBox.getItems().addAll(BookService.CATEGORIES);
+        categoryComboBox.setValue("Others");
         loadBooks();
     }
 
@@ -49,33 +48,12 @@ public class MyBooksController {
     }
 
     @FXML
-    private void handleFetchDetails() {
-        String isbn = isbnField.getText().trim();
-        if (isbn.isEmpty()) { statusLabel.setText("Enter an ISBN first."); statusLabel.setVisible(true); return; }
-        statusLabel.setText("Fetching from Open Library...");
-        statusLabel.setVisible(true);
-        new Thread(() -> {
-            var opt = apiService.fetchBookDetails(isbn);
-            Platform.runLater(() -> {
-                if (opt.isPresent()) {
-                    Book api = opt.get();
-                    if (api.getPublisher() != null && !api.getPublisher().isBlank())
-                        publisherField.setText(api.getPublisher());
-                    statusLabel.setText("\u2713 Details fetched from Open Library!");
-                } else {
-                    statusLabel.setText("No data found for this ISBN. Fill in manually.");
-                }
-            });
-        }).start();
-    }
-
-    @FXML
     private void handleAddBook() {
         String title     = titleField.getText().trim();
         String author    = authorField.getText().trim();
         String publisher = publisherField.getText().trim();
-        String isbn      = isbnField.getText().trim();
         String address   = addressField.getText().trim();
+        String category  = categoryComboBox.getValue() == null ? "Others" : categoryComboBox.getValue();
         if (title.isEmpty() || author.isEmpty()) {
             statusLabel.setText("Title and Author are required.");
             statusLabel.setVisible(true);
@@ -83,7 +61,7 @@ public class MyBooksController {
         }
         try {
             int ownerId = SessionManager.getCurrentUser().getId();
-            bookService.addBook(ownerId, title, author, publisher, isbn, address);
+            bookService.addBook(ownerId, title, author, publisher, address, category);
             clearForm();
             addBookForm.setVisible(false);
             addBookForm.setManaged(false);
@@ -130,6 +108,9 @@ public class MyBooksController {
         Label avail = new Label(book.isAvailable() ? "\u2713 Available" : "\u23f3 Currently Borrowed");
         avail.getStyleClass().add(book.isAvailable() ? "status-available" : "status-borrowed");
         info.getChildren().addAll(titleLbl, authorLbl, pubLbl);
+        Label catLbl = new Label(book.getCategory() == null ? "Others" : book.getCategory());
+        catLbl.getStyleClass().add("category-badge");
+        info.getChildren().add(catLbl);
         if (addrLbl != null) info.getChildren().add(addrLbl);
         if (book.getDescription() != null && !book.getDescription().isBlank()) {
             Label desc = new Label(book.getDescription().length() > 120
@@ -144,7 +125,8 @@ public class MyBooksController {
     }
 
     private void clearForm() {
-        titleField.clear(); authorField.clear(); publisherField.clear(); isbnField.clear(); addressField.clear();
+        titleField.clear(); authorField.clear(); publisherField.clear(); addressField.clear();
+        categoryComboBox.setValue("Others");
         statusLabel.setVisible(false);
     }
 }

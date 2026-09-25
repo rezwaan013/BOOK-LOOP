@@ -21,6 +21,7 @@ public class BrowseController {
     @FXML private VBox                booksContainer;
     @FXML private TextField           searchField;
     @FXML private ComboBox<Integer>   durationComboBox;
+    @FXML private ComboBox<String>    categoryComboBox;
     @FXML private Label               emptyLabel;
 
     private final BookService   bookService   = new BookService();
@@ -30,19 +31,22 @@ public class BrowseController {
     private void initialize() {
         durationComboBox.getItems().addAll(7, 14, 21);
         durationComboBox.setValue(7);
+        categoryComboBox.getItems().add("All");
+        categoryComboBox.getItems().addAll(BookService.CATEGORIES);
+        categoryComboBox.setValue("All");
+        categoryComboBox.setOnAction(e -> loadBooks(searchField.getText().trim()));
         loadBooks(null);
     }
 
     @FXML private void handleSearch()      { loadBooks(searchField.getText().trim()); }
-    @FXML private void handleClearSearch() { searchField.clear(); loadBooks(null); }
+    @FXML private void handleClearSearch() { searchField.clear(); categoryComboBox.setValue("All"); loadBooks(null); }
 
     private void loadBooks(String query) {
         booksContainer.getChildren().clear();
         try {
             int userId = SessionManager.getCurrentUser().getId();
-            List<Book> books = (query == null || query.isBlank())
-                    ? bookService.getBrowseBooks(userId)
-                    : bookService.searchBooks(query, userId);
+            String category = categoryComboBox.getValue() == null ? "All" : categoryComboBox.getValue();
+            List<Book> books = bookService.searchBooks(query, userId, category);
             emptyLabel.setVisible(books.isEmpty());
             for (Book b : books) booksContainer.getChildren().add(buildCard(b));
         } catch (SQLException e) {
@@ -67,6 +71,9 @@ public class BrowseController {
         Label authorLbl = new Label("by " + book.getAuthor()); authorLbl.getStyleClass().add("book-author");
         Label ownerLbl  = new Label("Owner: " + book.getOwnerName()); ownerLbl.getStyleClass().add("book-meta");
         info.getChildren().addAll(titleLbl, authorLbl, ownerLbl);
+        Label catLbl = new Label(book.getCategory() == null ? "Others" : book.getCategory());
+        catLbl.getStyleClass().add("category-badge");
+        info.getChildren().add(catLbl);
         if (book.getCurrentAddress() != null && !book.getCurrentAddress().isBlank()) {
             Label locLbl = new Label("📍 Available at: " + book.getCurrentAddress());
             locLbl.getStyleClass().add("book-location");

@@ -13,43 +13,33 @@ import java.util.Optional;
  */
 public class BookService {
 
-    private final BookDAO       bookDAO    = new BookDAO();
-    private final BookApiService apiService = new BookApiService();
+    private final BookDAO bookDAO = new BookDAO();
+
+    /** Book categories shown in the Add form and Browse filter. */
+    public static final List<String> CATEGORIES = List.of(
+            "Academic", "Fiction", "Non Fiction", "History", "Others");
 
     /**
      * Adds a new book for the given owner.
-     * If an ISBN is provided, attempts to enrich the record from Open Library
-     * (cover image, description, publisher). Falls back silently on failure.
      *
      * @param ownerId   the logged-in user's id
      * @param title     book title (required)
      * @param author    author name (required)
-     * @param publisher publisher (optional; may be filled in from API)
-     * @param isbn      ISBN (optional; triggers API fetch when non-blank)
+     * @param publisher publisher (optional)
      * @param currentAddress where the book is currently available (e.g. hall name)
+     * @param category  one of {@link #CATEGORIES}
      */
     public Book addBook(int ownerId, String title, String author,
-                        String publisher, String isbn, String currentAddress) throws SQLException {
+                        String publisher, String currentAddress, String category) throws SQLException {
         Book book = new Book();
         book.setOwnerId(ownerId);
         book.setTitle(title.trim());
         book.setAuthor(author.trim());
         book.setPublisher(publisher == null ? "" : publisher.trim());
-        book.setIsbn(isbn == null ? "" : isbn.trim());
+        book.setIsbn("");
         book.setCurrentAddress(currentAddress == null ? "" : currentAddress.trim());
+        book.setCategory(category);
         book.setAvailable(true);
-
-        if (isbn != null && !isbn.isBlank()) {
-            apiService.fetchBookDetails(isbn.trim()).ifPresent(api -> {
-                if (api.getDescription() != null && !api.getDescription().isBlank())
-                    book.setDescription(api.getDescription());
-                if (api.getCoverUrl() != null && !api.getCoverUrl().isBlank())
-                    book.setCoverUrl(api.getCoverUrl());
-                if ((publisher == null || publisher.isBlank())
-                        && api.getPublisher() != null && !api.getPublisher().isBlank())
-                    book.setPublisher(api.getPublisher());
-            });
-        }
 
         bookDAO.save(book);
         // Reward: +10 pts for contributing a book
@@ -61,9 +51,10 @@ public class BookService {
         return book;
     }
 
+    /** Legacy overload (ISBN removed) — delegates to the new signature. */
     public Book addBook(int ownerId, String title, String author,
                         String publisher, String isbn) throws SQLException {
-        return addBook(ownerId, title, author, publisher, isbn, "");
+        return addBook(ownerId, title, author, publisher, "", "Others");
     }
     /** Returns all books owned by this user (My Library). */
     public List<Book> getMyBooks(int ownerId) throws SQLException {
@@ -76,13 +67,19 @@ public class BookService {
     }
 
     /**
-     * Searches available books by title or author, excluding the user's own books.
-     * If the query is blank, returns all available books.
+     * Searches available books by title/author and category, excluding the user's own books.
+     * Pass "All" (or blank) as category to disable the category filter.
+     * If the query is blank, returns all available books (in the category).
      */
     public List<Book> searchBooks(String query, int currentUserId) throws SQLException {
-        return (query == null || query.isBlank())
-                ? getBrowseBooks(currentUserId)
-                : bookDAO.search(query, currentUserId);
+        return searchBooks(query, currentUserId, "All");
+    }
+
+    public List<Book> searchBooks(String query, int currentUserId, String category) throws SQLException {
+        boolean noQuery = (query == null || query.isBlank());
+        boolean noCat = (category == null || category.isBlank() || "All".equalsIgnoreCase(category));
+        if (noQuery && noCat) return getBrowseBooks(currentUserId);
+        return bookDAO.search(noQuery ? null : query, currentUserId, noCat ? "All" : category);
     }
 
     /** Looks up a single book by its id. */

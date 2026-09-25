@@ -68,6 +68,7 @@ public class DatabaseManager {
                 description TEXT,
                 cover_url   TEXT,
                 current_address TEXT DEFAULT '',
+                category    TEXT DEFAULT 'Others',
                 available   INTEGER DEFAULT 1,
                 created_at  TEXT    DEFAULT (datetime('now'))
             )
@@ -119,6 +120,13 @@ public class DatabaseManager {
                     }
                 }
                 if (!hasAddr) st.execute("ALTER TABLE books ADD COLUMN current_address TEXT DEFAULT ''");
+                boolean hasCat = false;
+                try (ResultSet rs = st.executeQuery("PRAGMA table_info(books)")) {
+                    while (rs.next()) {
+                        if ("category".equalsIgnoreCase(rs.getString("name"))) { hasCat = true; break; }
+                    }
+                }
+                if (!hasCat) st.execute("ALTER TABLE books ADD COLUMN category TEXT DEFAULT 'Others'");
             } catch (SQLException e) {
                 LOGGER.warning("Current address migration: " + e.getMessage());
             }

@@ -17,8 +17,8 @@ public class BookDAO {
      */
     public int save(Book book) throws SQLException {
         String sql = """
-            INSERT INTO books(owner_id,title,author,publisher,isbn,description,cover_url,current_address,available)
-            VALUES(?,?,?,?,?,?,?,?,?)
+            INSERT INTO books(owner_id,title,author,publisher,isbn,description,cover_url,current_address,category,available)
+            VALUES(?,?,?,?,?,?,?,?,?,?)
             """;
         try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, book.getOwnerId());
@@ -29,7 +29,8 @@ public class BookDAO {
             ps.setString(6, book.getDescription());
             ps.setString(7, book.getCoverUrl());
             ps.setString(8, book.getCurrentAddress() == null ? "" : book.getCurrentAddress());
-            ps.setInt(9, book.isAvailable() ? 1 : 0);
+            ps.setString(9, book.getCategory() == null ? "Others" : book.getCategory());
+            ps.setInt(10, book.isAvailable() ? 1 : 0);
             ps.executeUpdate();
             try (ResultSet k = ps.getGeneratedKeys()) {
                 int id = k.getInt(1);
@@ -62,19 +63,36 @@ public class BookDAO {
     }
 
     /**
-     * Searches available books by title or author (case-insensitive LIKE).
-     * Excludes the searching user's own books.
+     * Searches available books by title or author (case-insensitive LIKE),
+     * optionally filtered by category. Excludes the searching user's own books.
      */
     public List<Book> search(String term, int excludeOwnerId) throws SQLException {
+        return search(term, excludeOwnerId, "All");
+    }
+
+    public List<Book> search(String term, int excludeOwnerId, String category) throws SQLException {
+        boolean filterCat = category != null && !category.isBlank() && !"All".equalsIgnoreCase(category);
+        boolean filterTerm = term != null && !term.isBlank();
         String sql = """
             SELECT b.*, u.full_name AS owner_name
             FROM books b JOIN users u ON b.owner_id = u.id
             WHERE b.owner_id != ? AND b.available = 1
-              AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ?)
-            ORDER BY b.created_at DESC
-            """;
-        String pat = "%" + term.toLowerCase() + "%";
-        return query(sql, ps -> { ps.setInt(1, excludeOwnerId); ps.setString(2, pat); ps.setString(3, pat); });
+            """
+            + (filterTerm ? "  AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ?)\n" : "")
+            + (filterCat ? "  AND b.category = ?\n" : "")
+            + "ORDER BY b.created_at DESC";
+        String pat = "%" + (filterTerm ? term.toLowerCase() : "") + "%";
+        return query(sql, ps -> {
+            int i = 1;
+            ps.setInt(i++, excludeOwnerId);
+            if (filterTerm) { ps.setString(i++, pat); ps.setString(i++, pat); }
+            if (filterCat) ps.setString(i++, category);
+        });
+    }
+
+    /** Returns available books in a category, excluding the given user's own books. */
+    public List<Book> findByCategory(String category, int excludeOwnerId) throws SQLException {
+        return search(null, excludeOwnerId, category);
     }
 
     /** Looks up a single book by primary key (JOINed with user for owner name). */
@@ -123,6 +141,7 @@ public class BookDAO {
         b.setDescription(rs.getString("description"));
         b.setCoverUrl(rs.getString("cover_url"));
         try { b.setCurrentAddress(rs.getString("current_address")); } catch (SQLException ignored) { b.setCurrentAddress(""); }
+        try { b.setCategory(rs.getString("category")); } catch (SQLException ignored) { b.setCategory("Others"); }
         b.setAvailable(rs.getInt("available") == 1);
         String ts = rs.getString("created_at");
         if (ts != null) { try { b.setCreatedAt(LocalDateTime.parse(ts.replace(" ","T"))); } catch (Exception ignored) {} }

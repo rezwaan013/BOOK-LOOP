@@ -14,7 +14,8 @@ public class Book {
     private String title;
     private String author;
     private String publisher;
-    private String isbn;
+    private String isbn; // legacy column, no longer used in UI
+    private String category = "Others";
     private String description;
     private String coverUrl;
     private String currentAddress;
@@ -43,6 +44,11 @@ public class Book {
 
     public String getIsbn() { return isbn; }
     public void setIsbn(String isbn) { this.isbn = isbn; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) {
+        this.category = (category == null || category.isBlank()) ? "Others" : category.trim();
+    }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

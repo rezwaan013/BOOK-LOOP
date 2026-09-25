@@ -105,6 +105,16 @@
 .book-meta { -fx-text-fill: #757575; -fx-font-size: 12px; }
 .book-description { -fx-text-fill: #616161; -fx-font-size: 12px; }
 .book-location { -fx-text-fill: #1b5e20; -fx-font-size: 12px; -fx-font-weight: bold; }
+.category-badge {
+    -fx-background-color: #e8f5e9;
+    -fx-text-fill: #2e7d32;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 10;
+    -fx-background-radius: 10;
+    -fx-border-color: #a5d6a7;
+    -fx-border-radius: 10;
+}
 
 /* Forms & inputs */
 .text-field, .combo-box, .password-field {

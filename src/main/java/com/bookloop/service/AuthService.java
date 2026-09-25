@@ -15,6 +15,8 @@ import java.util.Optional;
 public class AuthService {
 
     private final UserDAO userDAO = new UserDAO();
+    /** Reward economy via interface (polymorphism — see StandardRewardPolicy). */
+    private final RewardPolicy rewards = new StandardRewardPolicy();
 
     /**
      * Registers a new user, hashes their password, and starts a session.
@@ -29,7 +31,7 @@ public class AuthService {
         String salt = PasswordUtil.generateSalt();
         String hash = PasswordUtil.hash(password, salt);
         User user = new User(fullName, phone, email, hash, salt);
-        user.setRewardPoints(50); // signup bonus
+        user.setRewardPoints(rewards.signupBonus()); // signup bonus
         userDAO.save(user);
         SessionManager.setCurrentUser(user);
         return user;

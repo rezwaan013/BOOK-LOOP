@@ -1,9 +1,11 @@
 package com.bookloop.controller;
 
 import com.bookloop.model.Book;
+import com.bookloop.service.BookApiService;
 import com.bookloop.service.BookService;
 import com.bookloop.util.AlertUtil;
 import com.bookloop.util.SessionManager;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -26,8 +28,27 @@ public class MyBooksController {
     @FXML private Label     statusLabel;
     @FXML private VBox      addBookForm;
     @FXML private Label     emptyLabel;
+    @FXML private ProgressIndicator fetchSpinner;
+    @FXML private Label     fetchLabel;
 
     private final BookService bookService = new BookService();
+    /** Network client for Open Library auto-fill (HttpClient + Jackson). */
+    private final BookApiService apiService = new BookApiService();
+    /**
+     * Cached thread pool for the auto-fill HTTP call.
+     * Demonstrates an {@link java.util.concurrent.ExecutorService} thread pool:
+     * the network request runs off the UI thread, results come back via
+     * {@code Platform.runLater()}.
+     */
+    private final java.util.concurrent.ExecutorService networkPool =
+            java.util.concurrent.Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "openlibrary-fetch");
+                t.setDaemon(true);
+                return t;
+            });
+    /** Metadata fetched by auto-fill, applied to the book on Save. */
+    private String fetchedCoverUrl;
+    private String fetchedDescription;
 
     @FXML
     private void initialize() {
@@ -61,15 +82,58 @@ public class MyBooksController {
         }
         try {
             int ownerId = SessionManager.getCurrentUser().getId();
-            bookService.addBook(ownerId, title, author, publisher, address, category);
+            int before = SessionManager.getCurrentUser().getRewardPoints();
+            bookService.addBook(ownerId, title, author, publisher, address, category,
+                    fetchedCoverUrl, fetchedDescription);
+            int after = SessionManager.getCurrentUser().getRewardPoints();
             clearForm();
             addBookForm.setVisible(false);
             addBookForm.setManaged(false);
             loadBooks();
-            AlertUtil.showInfo("Book Added", "\"" + title + "\" has been added to your library!");
+            // Points popup: confirm the +10 reward immediately.
+            AlertUtil.showInfo("Book Added",
+                    "\"" + title + "\" added to your library!\n★ +" + (after - before)
+                    + " pts (balance: " + after + " pts)");
         } catch (SQLException e) {
             AlertUtil.showError("Error", "Failed to add book: " + e.getMessage());
         }
+    }
+
+    /**
+     * Auto-fills publisher/cover from Open Library by title+author.
+     * The HTTP + JSON work runs on the {@link #networkPool} thread pool
+     * (multi-threading: UI stays responsive); UI updates go through
+     * {@code Platform.runLater()}.
+     */
+    @FXML
+    private void handleAutoFill() {
+        String title = titleField.getText().trim();
+        String author = authorField.getText().trim();
+        if (title.isEmpty()) {
+            statusLabel.setText("Enter a Title first, then Auto-fill.");
+            statusLabel.setVisible(true);
+            return;
+        }
+        fetchSpinner.setVisible(true);
+        fetchLabel.setText("Contacting openlibrary.org...");
+        networkPool.submit(() -> {
+            var opt = apiService.fetchByTitle(title, author);
+            Platform.runLater(() -> {
+                fetchSpinner.setVisible(false);
+                if (opt.isPresent()) {
+                    Book api = opt.get();
+                    if (api.getPublisher() != null && !api.getPublisher().isBlank()
+                            && publisherField.getText().isBlank())
+                        publisherField.setText(api.getPublisher());
+                    fetchedCoverUrl = api.getCoverUrl();
+                    fetchedDescription = api.getDescription();
+                    fetchLabel.setText("✓ Found on Open Library — details will be saved with the book.");
+                    statusLabel.setVisible(false);
+                } else {
+                    fetchLabel.setText("No match found — fill in manually.");
+                }
+            });
+        });
     }
 
     private void loadBooks() {
@@ -120,13 +184,32 @@ public class MyBooksController {
             info.getChildren().add(desc);
         }
         info.getChildren().add(avail);
-        card.getChildren().addAll(cover, info);
+        // CRUD Delete: owners can remove their own available books.
+        Button deleteBtn = new Button("Delete");
+        deleteBtn.getStyleClass().add("danger-button");
+        deleteBtn.setOnAction(e -> {
+            if (!AlertUtil.showConfirm("Delete Book",
+                    "Delete \"" + book.getTitle() + "\" from your library?")) return;
+            try {
+                bookService.deleteBook(book.getId(), SessionManager.getCurrentUser().getId());
+                loadBooks();
+            } catch (Exception ex) {
+                AlertUtil.showError("Cannot delete", ex.getMessage());
+            }
+        });
+        VBox actions = new VBox(deleteBtn);
+        actions.setAlignment(javafx.geometry.Pos.CENTER);
+        card.getChildren().addAll(cover, info, actions);
         return card;
     }
 
     private void clearForm() {
         titleField.clear(); authorField.clear(); publisherField.clear(); addressField.clear();
         categoryComboBox.setValue("Others");
+        fetchedCoverUrl = null;
+        fetchedDescription = null;
+        fetchLabel.setText("");
+        fetchSpinner.setVisible(false);
         statusLabel.setVisible(false);
     }
 }

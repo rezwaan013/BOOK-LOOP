@@ -107,8 +107,11 @@ public class BrowseController {
             String name = SessionManager.getCurrentUser().getFullName();
             int    uid  = SessionManager.getCurrentUser().getId();
             borrowService.requestBorrow(book.getId(), uid, duration, name);
+            int after = SessionManager.getCurrentUser().getRewardPoints();
+            // Points popup: confirm the deduction immediately.
             AlertUtil.showInfo("Request Sent",
-                    "Your request has been sent to " + book.getOwnerName() + "!");
+                    "Your request has been sent to " + book.getOwnerName() + "!\n★ -"
+                    + duration + " pts (balance: " + after + " pts)");
             loadBooks(searchField.getText().trim());
         } catch (Exception e) {
             AlertUtil.showError("Error", e.getMessage());

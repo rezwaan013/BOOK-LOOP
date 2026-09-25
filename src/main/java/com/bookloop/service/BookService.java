@@ -14,6 +14,8 @@ import java.util.Optional;
 public class BookService {
 
     private final BookDAO bookDAO = new BookDAO();
+    /** Reward economy, referenced through the interface (polymorphism). */
+    private final RewardPolicy rewards = new StandardRewardPolicy();
 
     /** Book categories shown in the Add form and Browse filter. */
     public static final List<String> CATEGORIES = List.of(
@@ -31,6 +33,16 @@ public class BookService {
      */
     public Book addBook(int ownerId, String title, String author,
                         String publisher, String currentAddress, String category) throws SQLException {
+        return addBook(ownerId, title, author, publisher, currentAddress, category, null, null);
+    }
+
+    /**
+     * Full variant carrying metadata auto-filled from the Open Library API
+     * (cover image + description). Falls back to manual data when null.
+     */
+    public Book addBook(int ownerId, String title, String author,
+                        String publisher, String currentAddress, String category,
+                        String coverUrl, String description) throws SQLException {
         Book book = new Book();
         book.setOwnerId(ownerId);
         book.setTitle(title.trim());
@@ -39,12 +51,14 @@ public class BookService {
         book.setIsbn("");
         book.setCurrentAddress(currentAddress == null ? "" : currentAddress.trim());
         book.setCategory(category);
+        book.setCoverUrl(coverUrl);
+        book.setDescription(description);
         book.setAvailable(true);
 
         bookDAO.save(book);
         // Reward: +10 pts for contributing a book
         try {
-            int updated = new com.bookloop.dao.UserDAO().addPoints(ownerId, 10);
+            int updated = new com.bookloop.dao.UserDAO().addPoints(ownerId, rewards.pointsForAddingBook());
             com.bookloop.model.User current = com.bookloop.util.SessionManager.getCurrentUser();
             if (current != null && current.getId() == ownerId) current.setRewardPoints(updated);
         } catch (SQLException ignored) {}
@@ -85,5 +99,19 @@ public class BookService {
     /** Looks up a single book by its id. */
     public Optional<Book> findById(int bookId) throws SQLException {
         return bookDAO.findById(bookId);
+    }
+
+    /**
+     * Deletes a book (CRUD Delete). Only the owner may delete, and only
+     * while the book is not currently borrowed.
+     */
+    public void deleteBook(int bookId, int requesterId) throws SQLException {
+        Book book = bookDAO.findById(bookId)
+                .orElseThrow(() -> new IllegalArgumentException("Book not found."));
+        if (book.getOwnerId() != requesterId)
+            throw new IllegalArgumentException("You can only delete your own books.");
+        if (!book.isAvailable())
+            throw new IllegalStateException("Cannot delete: this book is currently borrowed.");
+        bookDAO.deleteById(bookId);
     }
 }

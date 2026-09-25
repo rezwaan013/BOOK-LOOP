@@ -11,9 +11,16 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * Fetches book metadata from the Open Library API using an ISBN.
- * Endpoint: https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data
- * Falls back gracefully to manually entered data if the network call fails.
+ * Fetches book metadata from the Open Library API.
+ * Demonstrates <b>networking</b> (Java {@link HttpClient}) + <b>JSON parsing</b>
+ * (Jackson {@link ObjectMapper} / {@link JsonNode}).
+ * Two endpoints are used:
+ * <ul>
+ *   <li>Title search: {@code https://openlibrary.org/search.json?title=...} — no ISBN needed,
+ *       used by the "Auto-fill" button on the Add Book form.</li>
+ *   <li>ISBN lookup: {@code https://openlibrary.org/api/books?...} (legacy).</li>
+ * </ul>
+ * All network failures fall back gracefully to manually entered data.
  */
 public class BookApiService {
 
@@ -88,6 +95,52 @@ public class BookApiService {
             return Optional.of(book);
         } catch (Exception e) {
             LOGGER.warning("Failed to parse Open Library JSON: " + e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Searches Open Library by title (and optionally author) without needing an ISBN.
+     * HTTP GET {@code /search.json?title=...&author=...&limit=1}, then parses the
+     * JSON {@code docs[0]} node into publisher / cover image / first-publish year.
+     *
+     * @return partially-filled Book, or empty on network failure / no match
+     */
+    public Optional<Book> fetchByTitle(String title, String author) {
+        try {
+            String q = "title=" + java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
+            if (author != null && !author.isBlank())
+                q += "&author=" + java.net.URLEncoder.encode(author.trim(), java.nio.charset.StandardCharsets.UTF_8);
+            String url = "https://openlibrary.org/search.json?" + q + "&limit=1";
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(TIMEOUT)
+                    .GET()
+                    .build();
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() != 200) {
+                LOGGER.warning("Open Library search returned HTTP " + resp.statusCode());
+                return Optional.empty();
+            }
+            // --- JSON parsing with Jackson ---
+            JsonNode root = mapper.readTree(resp.body());
+            JsonNode docs = root.get("docs");
+            if (docs == null || !docs.isArray() || docs.isEmpty()) return Optional.empty();
+            JsonNode first = docs.get(0);
+
+            Book book = new Book();
+            JsonNode pubs = first.get("publisher");
+            if (pubs != null && pubs.isArray() && !pubs.isEmpty())
+                book.setPublisher(pubs.get(0).asText());
+            JsonNode coverId = first.get("cover_i");
+            if (coverId != null && coverId.isNumber())
+                book.setCoverUrl("https://covers.openlibrary.org/b/id/" + coverId.asLong() + "-M.jpg");
+            JsonNode year = first.get("first_publish_year");
+            if (year != null && year.isNumber())
+                book.setDescription("First published " + year.asInt() + " (auto-filled from Open Library).");
+            return Optional.of(book);
+        } catch (Exception e) {
+            LOGGER.warning("Open Library title search failed: " + e.getMessage());
             return Optional.empty();
         }
     }

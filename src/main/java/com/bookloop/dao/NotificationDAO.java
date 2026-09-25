@@ -60,6 +60,17 @@ public class NotificationDAO {
         }
     }
 
+    /** Returns the newest unread notification, if any (for live toast popups). */
+    public Optional<Notification> findLatestUnread(int userId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT * FROM notifications WHERE user_id=? AND is_read=0 ORDER BY id DESC LIMIT 1")) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(map(rs)) : Optional.empty();
+            }
+        }
+    }
+
     private Notification map(ResultSet rs) throws SQLException {
         Notification n = new Notification();
         n.setId(rs.getInt("id"));

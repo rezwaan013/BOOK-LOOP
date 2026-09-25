@@ -10,8 +10,11 @@ import java.util.logging.Logger;
 
 /**
  * Background poller that checks for unread notifications every 5 seconds.
- * Uses a daemon thread so it never prevents JVM shutdown.
- * All UI updates are dispatched via Platform.runLater().
+ * Demonstrates <b>concurrency</b>: a single-threaded
+ * {@link ScheduledExecutorService} (thread pool) running a daemon thread,
+ * with results marshalled back to the UI via
+ * {@code Platform.runLater()} so the JavaFX thread is never blocked.
+ * The polling thread shuts down cleanly via {@link #shutdown()}.
  */
 public final class NotificationPoller {
 
@@ -27,16 +30,63 @@ public final class NotificationPoller {
      * @param onUnreadCountChange called on the JavaFX thread with the new unread count
      */
     public static void start(int userId, Consumer<Integer> onUnreadCountChange) {
+        start(userId, onUnreadCountChange, msg -> {}, (delta, balance) -> {});
+    }
+
+    /**
+     * Full variant used by the dashboard: badge counts plus live toast popups.
+     * Runs two lightweight DB reads per tick on the background thread:
+     * unread count (+ newest message for toasts) and the user's points balance.
+     * A toast fires only when something actually <i>changed</i> (new unread id
+     * or a different points balance), so the user can keep browsing
+     * uninterrupted in one window while events pop up in another layer.
+     *
+     * @param onNewNotification fired once per new unread notification message
+     * @param onPointsChanged   fired as (delta, newBalance) when points change
+     */
+    public static void start(int userId,
+                             Consumer<Integer> onUnreadCountChange,
+                             Consumer<String> onNewNotification,
+                             java.util.function.BiConsumer<Integer, Integer> onPointsChanged) {
         shutdown();
         executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "notification-poller");
             t.setDaemon(true);
             return t;
         });
+        final int[] lastSeenId = {-1};
+        final int[] lastPoints = {Integer.MIN_VALUE};
+        final boolean[] firstTick = {true};
         executor.scheduleAtFixedRate(() -> {
             try {
-                int count = new NotificationDAO().countUnread(userId);
-                Platform.runLater(() -> onUnreadCountChange.accept(count));
+                com.bookloop.dao.NotificationDAO dao = new com.bookloop.dao.NotificationDAO();
+                int count = dao.countUnread(userId);
+                var latest = dao.findLatestUnread(userId);
+                int points = new com.bookloop.dao.UserDAO().findById(userId)
+                        .map(com.bookloop.model.User::getRewardPoints).orElse(0);
+                Platform.runLater(() -> {
+                    onUnreadCountChange.accept(count);
+                    // New-notification toast (skip the very first tick to avoid
+                    // popping for pre-existing unread items at login).
+                    if (latest.isPresent()) {
+                        int id = latest.get().getId();
+                        if (!firstTick[0] && id != lastSeenId[0]) {
+                            lastSeenId[0] = id;
+                            onNewNotification.accept(latest.get().getMessage());
+                        } else if (firstTick[0]) {
+                            lastSeenId[0] = id;
+                        }
+                    }
+                    // Points-change toast.
+                    if (lastPoints[0] == Integer.MIN_VALUE) {
+                        lastPoints[0] = points;
+                    } else if (points != lastPoints[0]) {
+                        int delta = points - lastPoints[0];
+                        lastPoints[0] = points;
+                        onPointsChanged.accept(delta, points);
+                    }
+                    firstTick[0] = false;
+                });
             } catch (SQLException e) {
                 LOGGER.warning("Notification poll error: " + e.getMessage());
             }

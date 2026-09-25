@@ -70,8 +70,16 @@
     </left>
 
     <!-- =================== CONTENT AREA =================== -->
+    <!-- StackPane lets the toast popup layer float above the content
+         (multi-window feel: browse in the back, popups in front). -->
     <center>
-        <AnchorPane fx:id="contentArea" styleClass="content-area"/>
+        <StackPane>
+            <AnchorPane fx:id="contentArea" styleClass="content-area"/>
+            <VBox fx:id="toastBox" spacing="8" visible="false" mouseTransparent="true"
+                  StackPane.alignment="BOTTOM_RIGHT" maxWidth="320">
+                <StackPane.margin><Insets top="0" right="16" bottom="16" left="0"/></StackPane.margin>
+            </VBox>
+        </StackPane>
     </center>
 
 </BorderPane>

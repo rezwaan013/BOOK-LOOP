@@ -4,10 +4,12 @@ import com.bookloop.service.AuthService;
 import com.bookloop.util.NavigationUtil;
 import com.bookloop.util.NotificationPoller;
 import com.bookloop.util.SessionManager;
+import com.bookloop.util.ToastUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 
 /** Shell controller for the dashboard — manages sidebar navigation and the content area. */
 public class DashboardController {
@@ -16,6 +18,7 @@ public class DashboardController {
     @FXML private Label       notificationBadge;
     @FXML private Label       pointsLabel;
     @FXML private AnchorPane  contentArea;
+    @FXML private VBox        toastBox;
     @FXML private Button      myBooksBtn;
     @FXML private Button      browseBooksBtn;
     @FXML private Button      requestsBtn;
@@ -32,6 +35,8 @@ public class DashboardController {
         }
 
         int userId = SessionManager.getCurrentUser().getId();
+        // Live badge + toast popups: the user keeps browsing/working while
+        // notifications and points changes pop up in the overlay layer.
         NotificationPoller.start(userId, count -> {
             if (count > 0) {
                 notificationBadge.setText(String.valueOf(count));
@@ -39,7 +44,19 @@ public class DashboardController {
             } else {
                 notificationBadge.setVisible(false);
             }
+        }, message -> ToastUtil.showNotification(toastBox, message),
+        (delta, balance) -> {
+            if (SessionManager.getCurrentUser() != null)
+                SessionManager.getCurrentUser().setRewardPoints(balance);
+            refreshPoints();
+            ToastUtil.showPoints(toastBox, delta, balance);
         });
+
+        // ---- Layout responsiveness: toast width follows the window ----
+        // Caps at 320px but shrinks to 45% of the content width on narrow
+        // windows, via a live property binding (no hardcoded sizes).
+        toastBox.maxWidthProperty().bind(javafx.beans.binding.Bindings.min(
+                320, contentArea.widthProperty().multiply(0.45)));
 
         handleMyBooks(); // default view
     }

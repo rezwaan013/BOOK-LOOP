@@ -20,6 +20,8 @@ public class BorrowService {
     private final BorrowRequestDAO requestDAO       = new BorrowRequestDAO();
     private final BookDAO          bookDAO          = new BookDAO();
     private final NotificationService notifService  = new NotificationService();
+    /** Reward economy via interface (polymorphism — see StandardRewardPolicy). */
+    private final RewardPolicy rewards = new StandardRewardPolicy();
 
     /**
      * Creates a PENDING borrow request and notifies the book owner.
@@ -38,8 +40,8 @@ public class BorrowService {
         if (!book.isAvailable())        throw new IllegalStateException("This book is not currently available.");
         if (book.getOwnerId() == requesterId) throw new IllegalArgumentException("You cannot borrow your own book.");
 
-        // Reward cost: 1 point per day (7 days = 7 pts, 14 = 14, 21 = 21)
-        int cost = durationDays;
+        // Reward cost from policy: 1 point per day (7 days = 7 pts, 14 = 14, 21 = 21)
+        int cost = rewards.costToBorrow(durationDays);
         com.bookloop.dao.UserDAO userDAO = new com.bookloop.dao.UserDAO();
         int balance = userDAO.findById(requesterId).map(com.bookloop.model.User::getRewardPoints).orElse(0);
         if (balance < cost)

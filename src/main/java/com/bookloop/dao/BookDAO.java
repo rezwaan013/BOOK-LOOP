@@ -6,10 +6,10 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/** CRUD and query operations for the books table. */
-public class BookDAO {
-
-    private final Connection con = DatabaseManager.getInstance().getConnection();
+/** CRUD and query operations for the books table.
+ * Extends {@link AbstractDAO} (abstract class) and implements
+ * {@link CrudRepository} (interface) — see those files for the OOP showcase. */
+public class BookDAO extends AbstractDAO<Book> implements CrudRepository<Book, Integer> {
 
     /**
      * Inserts a new book and sets its generated id.
@@ -96,7 +96,8 @@ public class BookDAO {
     }
 
     /** Looks up a single book by primary key (JOINed with user for owner name). */
-    public Optional<Book> findById(int id) throws SQLException {
+    @Override
+    public Optional<Book> findById(Integer id) throws SQLException {
         String sql = """
             SELECT b.*, u.full_name AS owner_name
             FROM books b JOIN users u ON b.owner_id = u.id
@@ -115,6 +116,18 @@ public class BookDAO {
         }
     }
 
+    /**
+     * Deletes a book by id (CRUD Delete).
+     * Only the owner should call this (enforced in {@link com.bookloop.service.BookService}).
+     */
+    @Override
+    public void deleteById(Integer bookId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement("DELETE FROM books WHERE id=?")) {
+            ps.setInt(1, bookId);
+            ps.executeUpdate();
+        }
+    }
+
     @FunctionalInterface
     private interface ParamSetter { void set(PreparedStatement ps) throws SQLException; }
 
@@ -129,7 +142,8 @@ public class BookDAO {
         return list;
     }
 
-    private Book map(ResultSet rs) throws SQLException {
+    @Override
+    protected Book map(ResultSet rs) throws SQLException {
         Book b = new Book();
         b.setId(rs.getInt("id"));
         b.setOwnerId(rs.getInt("owner_id"));

@@ -67,6 +67,11 @@ public class BrowseController {
         Label authorLbl = new Label("by " + book.getAuthor()); authorLbl.getStyleClass().add("book-author");
         Label ownerLbl  = new Label("Owner: " + book.getOwnerName()); ownerLbl.getStyleClass().add("book-meta");
         info.getChildren().addAll(titleLbl, authorLbl, ownerLbl);
+        if (book.getCurrentAddress() != null && !book.getCurrentAddress().isBlank()) {
+            Label locLbl = new Label("📍 Available at: " + book.getCurrentAddress());
+            locLbl.getStyleClass().add("book-location");
+            info.getChildren().add(locLbl);
+        }
         if (book.getDescription() != null && !book.getDescription().isBlank()) {
             Label desc = new Label(book.getDescription().length() > 120
                     ? book.getDescription().substring(0, 120) + "..." : book.getDescription());

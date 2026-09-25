@@ -67,6 +67,7 @@ public class DatabaseManager {
                 isbn        TEXT,
                 description TEXT,
                 cover_url   TEXT,
+                current_address TEXT DEFAULT '',
                 available   INTEGER DEFAULT 1,
                 created_at  TEXT    DEFAULT (datetime('now'))
             )
@@ -108,6 +109,18 @@ public class DatabaseManager {
                 }
             } catch (SQLException e) {
                 LOGGER.warning("Reward points migration: " + e.getMessage());
+            }
+            // Migrate existing databases: add current_address to books if missing
+            try {
+                boolean hasAddr = false;
+                try (ResultSet rs = st.executeQuery("PRAGMA table_info(books)")) {
+                    while (rs.next()) {
+                        if ("current_address".equalsIgnoreCase(rs.getString("name"))) { hasAddr = true; break; }
+                    }
+                }
+                if (!hasAddr) st.execute("ALTER TABLE books ADD COLUMN current_address TEXT DEFAULT ''");
+            } catch (SQLException e) {
+                LOGGER.warning("Current address migration: " + e.getMessage());
             }
         }
         LOGGER.info("Schema verified.");

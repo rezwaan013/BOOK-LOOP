@@ -26,15 +26,17 @@ public class BookService {
      * @param author    author name (required)
      * @param publisher publisher (optional; may be filled in from API)
      * @param isbn      ISBN (optional; triggers API fetch when non-blank)
+     * @param currentAddress where the book is currently available (e.g. hall name)
      */
     public Book addBook(int ownerId, String title, String author,
-                        String publisher, String isbn) throws SQLException {
+                        String publisher, String isbn, String currentAddress) throws SQLException {
         Book book = new Book();
         book.setOwnerId(ownerId);
         book.setTitle(title.trim());
         book.setAuthor(author.trim());
         book.setPublisher(publisher == null ? "" : publisher.trim());
         book.setIsbn(isbn == null ? "" : isbn.trim());
+        book.setCurrentAddress(currentAddress == null ? "" : currentAddress.trim());
         book.setAvailable(true);
 
         if (isbn != null && !isbn.isBlank()) {
@@ -59,6 +61,10 @@ public class BookService {
         return book;
     }
 
+    public Book addBook(int ownerId, String title, String author,
+                        String publisher, String isbn) throws SQLException {
+        return addBook(ownerId, title, author, publisher, isbn, "");
+    }
     /** Returns all books owned by this user (My Library). */
     public List<Book> getMyBooks(int ownerId) throws SQLException {
         return bookDAO.findByOwner(ownerId);

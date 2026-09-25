@@ -104,6 +104,7 @@
 .book-author { -fx-text-fill: #558b2f; }
 .book-meta { -fx-text-fill: #757575; -fx-font-size: 12px; }
 .book-description { -fx-text-fill: #616161; -fx-font-size: 12px; }
+.book-location { -fx-text-fill: #1b5e20; -fx-font-size: 12px; -fx-font-weight: bold; }
 
 /* Forms & inputs */
 .text-field, .combo-box, .password-field {

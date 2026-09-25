@@ -17,6 +17,7 @@ public class Book {
     private String isbn;
     private String description;
     private String coverUrl;
+    private String currentAddress;
     private boolean available;
     private LocalDateTime createdAt;
 
@@ -48,6 +49,9 @@ public class Book {
 
     public String getCoverUrl() { return coverUrl; }
     public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
+
+    public String getCurrentAddress() { return currentAddress; }
+    public void setCurrentAddress(String currentAddress) { this.currentAddress = currentAddress; }
 
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }

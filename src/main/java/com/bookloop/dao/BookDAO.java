@@ -17,8 +17,8 @@ public class BookDAO {
      */
     public int save(Book book) throws SQLException {
         String sql = """
-            INSERT INTO books(owner_id,title,author,publisher,isbn,description,cover_url,available)
-            VALUES(?,?,?,?,?,?,?,?)
+            INSERT INTO books(owner_id,title,author,publisher,isbn,description,cover_url,current_address,available)
+            VALUES(?,?,?,?,?,?,?,?,?)
             """;
         try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, book.getOwnerId());
@@ -28,7 +28,8 @@ public class BookDAO {
             ps.setString(5, book.getIsbn());
             ps.setString(6, book.getDescription());
             ps.setString(7, book.getCoverUrl());
-            ps.setInt(8, book.isAvailable() ? 1 : 0);
+            ps.setString(8, book.getCurrentAddress() == null ? "" : book.getCurrentAddress());
+            ps.setInt(9, book.isAvailable() ? 1 : 0);
             ps.executeUpdate();
             try (ResultSet k = ps.getGeneratedKeys()) {
                 int id = k.getInt(1);
@@ -121,6 +122,7 @@ public class BookDAO {
         b.setIsbn(rs.getString("isbn"));
         b.setDescription(rs.getString("description"));
         b.setCoverUrl(rs.getString("cover_url"));
+        try { b.setCurrentAddress(rs.getString("current_address")); } catch (SQLException ignored) { b.setCurrentAddress(""); }
         b.setAvailable(rs.getInt("available") == 1);
         String ts = rs.getString("created_at");
         if (ts != null) { try { b.setCreatedAt(LocalDateTime.parse(ts.replace(" ","T"))); } catch (Exception ignored) {} }

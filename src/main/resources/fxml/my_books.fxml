@@ -16,6 +16,7 @@
         <TextField fx:id="titleField" promptText="Title *"/>
         <TextField fx:id="authorField" promptText="Author *"/>
         <TextField fx:id="publisherField" promptText="Publisher"/>
+        <TextField fx:id="addressField" promptText="Current Address (e.g. SSH, KUET)"/>
         <HBox spacing="8">
             <TextField fx:id="isbnField" promptText="ISBN (optional)" HBox.hgrow="ALWAYS"/>
             <Button text="Fetch Details" onAction="#handleFetchDetails"/>

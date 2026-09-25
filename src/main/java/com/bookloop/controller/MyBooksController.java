@@ -24,6 +24,7 @@ public class MyBooksController {
     @FXML private TextField authorField;
     @FXML private TextField publisherField;
     @FXML private TextField isbnField;
+    @FXML private TextField addressField;
     @FXML private Label     statusLabel;
     @FXML private VBox      addBookForm;
     @FXML private Label     emptyLabel;
@@ -74,6 +75,7 @@ public class MyBooksController {
         String author    = authorField.getText().trim();
         String publisher = publisherField.getText().trim();
         String isbn      = isbnField.getText().trim();
+        String address   = addressField.getText().trim();
         if (title.isEmpty() || author.isEmpty()) {
             statusLabel.setText("Title and Author are required.");
             statusLabel.setVisible(true);
@@ -81,7 +83,7 @@ public class MyBooksController {
         }
         try {
             int ownerId = SessionManager.getCurrentUser().getId();
-            bookService.addBook(ownerId, title, author, publisher, isbn);
+            bookService.addBook(ownerId, title, author, publisher, isbn, address);
             clearForm();
             addBookForm.setVisible(false);
             addBookForm.setManaged(false);
@@ -120,9 +122,15 @@ public class MyBooksController {
         Label authorLbl = new Label("by " + book.getAuthor()); authorLbl.getStyleClass().add("book-author");
         Label pubLbl    = new Label(book.getPublisher() != null ? book.getPublisher() : "");
         pubLbl.getStyleClass().add("book-meta");
+        Label addrLbl = null;
+        if (book.getCurrentAddress() != null && !book.getCurrentAddress().isBlank()) {
+            addrLbl = new Label("📍 " + book.getCurrentAddress());
+            addrLbl.getStyleClass().add("book-location");
+        }
         Label avail = new Label(book.isAvailable() ? "\u2713 Available" : "\u23f3 Currently Borrowed");
         avail.getStyleClass().add(book.isAvailable() ? "status-available" : "status-borrowed");
         info.getChildren().addAll(titleLbl, authorLbl, pubLbl);
+        if (addrLbl != null) info.getChildren().add(addrLbl);
         if (book.getDescription() != null && !book.getDescription().isBlank()) {
             Label desc = new Label(book.getDescription().length() > 120
                     ? book.getDescription().substring(0, 120) + "..." : book.getDescription());
@@ -136,7 +144,7 @@ public class MyBooksController {
     }
 
     private void clearForm() {
-        titleField.clear(); authorField.clear(); publisherField.clear(); isbnField.clear();
+        titleField.clear(); authorField.clear(); publisherField.clear(); isbnField.clear(); addressField.clear();
         statusLabel.setVisible(false);
     }
 }

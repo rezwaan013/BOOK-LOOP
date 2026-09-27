@@ -1,0 +1,111 @@
+BookLoop — Functionalities, Flow & System Architecture
+=====================================================
+
+1. WHAT THE APP DOES (functionalities)
+-------------------------------------
+- Authentication: register (name, phone, email, password) and login.
+  Passwords are salted + SHA-256 hashed (PasswordUtil); plain text is never stored.
+  New accounts start with 50 reward points (signup bonus).
+- My Library: logged-in users add books they own (title, author, publisher,
+  current address, category). Each added book earns +10 points.
+  "Auto-fill from Open Library" fetches publisher/cover by title over HTTP.
+  Owners can delete their own books (blocked while a book is borrowed).
+- Browse Books: lists available books owned by OTHER users, with text search
+  (title/author) + category filter (Academic, Fiction, Non Fiction, History, Others).
+  Borrow buttons show point cost before confirming.
+- Borrow Requests: borrower picks 7/14/21 days (costs 7/14/21 pts, deducted
+  immediately). Request saved as PENDING with due date = now + duration.
+  Owner sees it under Requests > Incoming and Accepts/Declines; borrower sees
+  it under Requests > Outgoing and can Mark as Returned.
+- Notifications: every request/accept/decline creates a notification for the
+  other party. Sidebar badge shows unread count; Notifications screen marks
+  read. A background poller pops toast alerts live while the user works.
+- Reward Points: +50 signup, +10 add book, -1 pt/day borrowed. Balance shown
+  as a gold badge in the sidebar; popups confirm every change.
+
+2. SCREEN FLOW (user journey)
+----------------------------
+Login/Register --> Dashboard (sidebar shell)
+  |-- My Library   (add books, auto-fill, delete, view own books)
+  |-- Browse Books (search/filter, request to borrow, pay points)
+  |-- Requests     (Incoming tab = accept/decline; Outgoing tab = return)
+  |-- Notifications (read list, mark all read)
+  Logout --> Login
+
+Typical demo flow (two users, e.g. Alice + Bob):
+  1. Alice registers (+50 pts) and adds "1984" (+10 pts).
+  2. Bob registers, browses, filters Fiction, requests "1984" for 7 days (-7 pts).
+  3. While Alice is browsing, a toast pops: "Bob wants to borrow...".
+  4. Alice opens Requests > Incoming > Accept. Book becomes unavailable.
+  5. Bob gets a toast + notification with the due date.
+  6. Bob returns it from Requests > Outgoing. Book becomes available again.
+
+3. SYSTEM ARCHITECTURE (layered design)
+---------------------------------------
+  FXML views (resources/fxml)
+        |
+  Controllers (controller/)  -- thin: input validation + view updates only
+        |
+  Services (service/)        -- business rules, no SQL here
+  (AuthService, BookService, BorrowService, NotificationService,
+   BookApiService for HTTP, RewardPolicy/StandardRewardPolicy for points)
+        |
+  DAOs (dao/)                -- all SQL, PreparedStatements only
+  (UserDAO, BookDAO, BorrowRequestDAO, NotificationDAO on top of
+   AbstractDAO + CrudRepository contract)
+        |
+  DatabaseManager (singleton, one reusable SQLite connection)
+        |
+  bookloop.db (users, books, borrow_requests, notifications)
+
+  Utils (util/): NavigationUtil (scene switching + embed views),
+  SessionManager (logged-in user), PasswordUtil (hashing),
+  AlertUtil (dialogs), ToastUtil (popup toasts),
+  NotificationPoller (background ScheduledExecutorService thread).
+
+4. WHICH SECTION DOES WHAT (file map)
+-------------------------------------
+- model/: User (+rewardPoints), Book (+currentAddress, category),
+  BorrowRequest (+status enum), Notification, RequestStatus enum.
+- dao/DatabaseManager.java: creates bookloop.db, tables + FKs, seed demo
+  users/books, ALTER TABLE migrations for existing DBs.
+- dao/AbstractDAO.java + CrudRepository.java: OOP showcase (abstract class
+  + generic interface); BookDAO extends/implements them.
+- service/AuthService.java: register/login, signup bonus via RewardPolicy.
+- service/BookService.java: add/delete/search books, +10 pts per book.
+- service/BorrowService.java: request/accept/decline/return, deducts
+  costToBorrow(duration) points, creates notifications.
+- service/BookApiService.java: HttpClient + Jackson JSON parsing of
+  Open Library search.json (publisher, cover_i, first_publish_year).
+- controller/LoginController, RegisterController: auth screens.
+- controller/DashboardController: sidebar shell, points badge, live toast
+  overlay (notification + points watchers), responsive width binding.
+- controller/MyBooksController: add form (category dropdown, address box,
+  auto-fill on a thread pool), book cards with Delete button.
+- controller/BrowseController: search + category filter, borrow with
+  cost confirm + deduction popup.
+- controller/RequestsController: incoming accept/decline, outgoing return.
+- controller/NotificationsController: list + mark read/all-read.
+- resources/fxml/: login, register, dashboard (BorderPane + StackPane
+  toast layer), my_books, browse, requests (TabPane), notifications.
+- resources/style.css: green minimal theme, cards, badges, toasts.
+
+5. THREADING / CONCURRENCY POINTS
+--------------------------------
+- NotificationPoller: single-thread ScheduledExecutorService (daemon),
+  5s tick, Platform.runLater() UI updates, clean shutdown.
+- MyBooksController.networkPool: cached ExecutorService for the
+  Open Library HTTP call; spinner + fallback message on failure.
+
+6. DATABASE TABLES & RELATIONSHIPS
+----------------------------------
+- users(id PK, full_name, phone, email UNIQUE, password_hash, salt,
+  reward_points, created_at)
+- books(id PK, owner_id FK->users(id), title, author, publisher, isbn
+  [legacy], description, cover_url, current_address, category, available)
+- borrow_requests(id PK, book_id FK->books(id), requester_id FK->users(id),
+  status, duration_days, request_date, due_date)
+- notifications(id PK, user_id FK->users(id), message, is_read, created_at)
+- One user owns many books; one request links one book + one requester;
+  one user receives many notifications. JOINs fetch owner_name/book_title
+  for display.

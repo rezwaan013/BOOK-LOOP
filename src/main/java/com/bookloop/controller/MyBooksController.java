@@ -114,7 +114,9 @@ public class MyBooksController {
                         publisherField.setText(api.getPublisher());
                     fetchedCoverUrl = api.getCoverUrl();
                     fetchedDescription = api.getDescription();
-                    fetchLabel.setText("Found on Open Library — details will be saved with the book.");
+                    String found = api.getPublisher() != null && !api.getPublisher().isBlank()
+                            ? "Publisher: " + api.getPublisher() : "Details found";
+                    fetchLabel.setText("Found on Open Library (" + found + ") — will be saved with the book.");
                     statusLabel.setVisible(false);
                 } else {
                     fetchLabel.setText("No match found — fill in manually.");

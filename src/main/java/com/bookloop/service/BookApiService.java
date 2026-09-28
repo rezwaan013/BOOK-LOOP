@@ -37,7 +37,7 @@ public class BookApiService {
             String q = "title=" + java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
             if (author != null && !author.isBlank())
                 q += "&author=" + java.net.URLEncoder.encode(author.trim(), java.nio.charset.StandardCharsets.UTF_8);
-            String url = "https://openlibrary.org/search.json?" + q + "&limit=1";
+            String url = "https://openlibrary.org/search.json?" + q + "&limit=5";
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(TIMEOUT)
@@ -51,18 +51,30 @@ public class BookApiService {
             JsonNode root = mapper.readTree(resp.body());
             JsonNode docs = root.get("docs");
             if (docs == null || !docs.isArray() || docs.isEmpty()) return Optional.empty();
-            JsonNode first = docs.get(0);
 
+            // Scan the top hits and merge: first non-empty publisher, cover and year win.
+            // (docs[0] alone often lacks a publisher, e.g. for "1984".)
             Book book = new Book();
-            JsonNode pubs = first.get("publisher");
-            if (pubs != null && pubs.isArray() && !pubs.isEmpty())
-                book.setPublisher(pubs.get(0).asText());
-            JsonNode coverId = first.get("cover_i");
-            if (coverId != null && coverId.isNumber())
-                book.setCoverUrl("https://covers.openlibrary.org/b/id/" + coverId.asLong() + "-M.jpg");
-            JsonNode year = first.get("first_publish_year");
-            if (year != null && year.isNumber())
-                book.setDescription("First published " + year.asInt() + " (via Open Library).");
+            for (JsonNode doc : docs) {
+                if ((book.getPublisher() == null || book.getPublisher().isBlank())) {
+                    JsonNode pubs = doc.get("publisher");
+                    if (pubs != null && pubs.isArray() && !pubs.isEmpty()
+                            && !pubs.get(0).asText().isBlank())
+                        book.setPublisher(pubs.get(0).asText());
+                }
+                if (book.getCoverUrl() == null || book.getCoverUrl().isBlank()) {
+                    JsonNode coverId = doc.get("cover_i");
+                    if (coverId != null && coverId.isNumber())
+                        book.setCoverUrl("https://covers.openlibrary.org/b/id/" + coverId.asLong() + "-M.jpg");
+                }
+                if (book.getDescription() == null || book.getDescription().isBlank()) {
+                    JsonNode year = doc.get("first_publish_year");
+                    if (year != null && year.isNumber())
+                        book.setDescription("First published " + year.asInt() + " (via Open Library).");
+                }
+                if (book.getPublisher() != null && !book.getPublisher().isBlank()
+                        && book.getCoverUrl() != null && !book.getCoverUrl().isBlank()) break;
+            }
             return Optional.of(book);
         } catch (Exception e) {
             LOGGER.warning("Open Library title search failed: " + e.getMessage());

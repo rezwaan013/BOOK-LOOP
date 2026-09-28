@@ -132,9 +132,8 @@ public class DatabaseManager {
         LOGGER.info("Schema verified.");
     }
 
-    /** No seed data — the app starts with empty tables; users register fresh. */
+    /** No seed data — the app starts with empty tables. */
     private void seedData() throws SQLException {
-        // Intentionally empty: previously inserted demo users/books here.
     }
 
     /** Closes the database connection cleanly. */

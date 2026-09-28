@@ -55,7 +55,6 @@ public class BookService {
         book.setAvailable(true);
 
         bookDAO.save(book);
-        // Reward: +10 pts for contributing a book
         try {
             int updated = new com.bookloop.dao.UserDAO().addPoints(ownerId, rewards.pointsForAddingBook());
             com.bookloop.model.User current = com.bookloop.util.SessionManager.getCurrentUser();
@@ -64,11 +63,6 @@ public class BookService {
         return book;
     }
 
-    /** Legacy overload (ISBN removed) — delegates to the new signature. */
-    public Book addBook(int ownerId, String title, String author,
-                        String publisher, String isbn) throws SQLException {
-        return addBook(ownerId, title, author, publisher, "", "Others");
-    }
     /** Returns all books owned by this user (My Library). */
     public List<Book> getMyBooks(int ownerId) throws SQLException {
         return bookDAO.findByOwner(ownerId);

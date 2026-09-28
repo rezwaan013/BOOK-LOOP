@@ -35,8 +35,6 @@ public class DashboardController {
         }
 
         int userId = SessionManager.getCurrentUser().getId();
-        // Live badge + toast popups: the user keeps browsing/working while
-        // notifications and points changes pop up in the overlay layer.
         NotificationPoller.start(userId, count -> {
             if (count > 0) {
                 notificationBadge.setText(String.valueOf(count));
@@ -52,13 +50,10 @@ public class DashboardController {
             ToastUtil.showPoints(toastBox, delta, balance);
         });
 
-        // ---- Layout responsiveness: toast width follows the window ----
-        // Caps at 320px but shrinks to 45% of the content width on narrow
-        // windows, via a live property binding (no hardcoded sizes).
         toastBox.maxWidthProperty().bind(javafx.beans.binding.Bindings.min(
                 320, contentArea.widthProperty().multiply(0.45)));
 
-        handleMyBooks(); // default view
+        handleMyBooks();
     }
 
     @FXML private void handleMyBooks()      { setActive(myBooksBtn);      NavigationUtil.loadInto(contentArea, "my_books"); refreshPoints(); }

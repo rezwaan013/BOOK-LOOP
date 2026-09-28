@@ -31,7 +31,7 @@ public class AuthService {
         String salt = PasswordUtil.generateSalt();
         String hash = PasswordUtil.hash(password, salt);
         User user = new User(fullName, phone, email, hash, salt);
-        user.setRewardPoints(rewards.signupBonus()); // signup bonus
+        user.setRewardPoints(rewards.signupBonus());
         userDAO.save(user);
         SessionManager.setCurrentUser(user);
         return user;

@@ -13,7 +13,7 @@ public class Book {
     private String title;
     private String author;
     private String publisher;
-    private String isbn; // legacy column, no longer used in UI
+    private String isbn;
     private String category = "Others";
     private String description;
     private String coverUrl;

@@ -68,7 +68,6 @@ public class MyBooksController {
             addBookForm.setVisible(false);
             addBookForm.setManaged(false);
             loadBooks();
-            // Points popup: confirm the +10 reward immediately.
             AlertUtil.showInfo("Book Added",
                     "\"" + title + "\" added to your library!\n★ +" + (after - before)
                     + " pts (balance: " + after + " pts)");
@@ -125,7 +124,6 @@ public class MyBooksController {
             info.getChildren().add(desc);
         }
         info.getChildren().add(avail);
-        // CRUD Delete: owners can remove their own available books.
         Button deleteBtn = new Button("Delete");
         deleteBtn.getStyleClass().add("danger-button");
         deleteBtn.setOnAction(e -> {

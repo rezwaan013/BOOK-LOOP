@@ -66,8 +66,6 @@ public final class NotificationPoller {
                         .map(com.bookloop.model.User::getRewardPoints).orElse(0);
                 Platform.runLater(() -> {
                     onUnreadCountChange.accept(count);
-                    // New-notification toast (skip the very first tick to avoid
-                    // popping for pre-existing unread items at login).
                     if (latest.isPresent()) {
                         int id = latest.get().getId();
                         if (!firstTick[0] && id != lastSeenId[0]) {
@@ -77,7 +75,6 @@ public final class NotificationPoller {
                             lastSeenId[0] = id;
                         }
                     }
-                    // Points-change toast.
                     if (lastPoints[0] == Integer.MIN_VALUE) {
                         lastPoints[0] = points;
                     } else if (points != lastPoints[0]) {

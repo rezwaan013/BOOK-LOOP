@@ -108,7 +108,6 @@ public class BrowseController {
             int    uid  = SessionManager.getCurrentUser().getId();
             borrowService.requestBorrow(book.getId(), uid, duration, name);
             int after = SessionManager.getCurrentUser().getRewardPoints();
-            // Points popup: confirm the deduction immediately.
             AlertUtil.showInfo("Request Sent",
                     "Your request has been sent to " + book.getOwnerName() + "!\n★ -"
                     + duration + " pts (balance: " + after + " pts)");

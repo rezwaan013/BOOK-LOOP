@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 /**
  * Represents a book added by a user for lending.
- * coverUrl and description may be populated from the Open Library API when an ISBN is provided.
  */
 public class Book {
 

@@ -1,4 +1,4 @@
-# BookLoop - P2P Book Lending System
+# BookLoop - Borrow,read,return, repeat
 
 BookLoop is a peer-to-peer book lending and borrowing application designed for university students. It allows users to list books they own and request to borrow books from others in their community.
 

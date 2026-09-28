@@ -68,7 +68,7 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 - Live multi-window feel: keep browsing while a borrow-request notification or points change pops up as a toast overlay (`util/ToastUtil.java` + `toastBox` in `dashboard.fxml`).
 
 ### 5. Database Integration (SQLite)
-- `dao/DatabaseManager.java` — singleton, one reusable `Connection` (`jdbc:sqlite:bookloop.db`), `PRAGMA foreign_keys = ON`, auto-creates schema + seed data on first run, `ALTER TABLE` migrations for existing DBs.
+- `dao/DatabaseManager.java` — singleton, one reusable `Connection` (`jdbc:sqlite:bookloop.db`), `PRAGMA foreign_keys = ON`, auto-creates empty schema on first run, `ALTER TABLE` migrations for existing DBs.
 - Tables: `users(id PK, ..., reward_points)`, `books(id PK, owner_id FK→users, ..., current_address, category)`, `borrow_requests(id PK, book_id FK→books, requester_id FK→users, status, duration_days, due_date)`, `notifications(id PK, user_id FK→users, message, is_read)`.
 - Relationships: books owned by users (one-to-many), requests join books+users (JOINs in `BookDAO`/`BorrowRequestDAO` fetch `owner_name`/`book_title` display fields).
 - All queries use parameterized `PreparedStatement` (no string concatenation).

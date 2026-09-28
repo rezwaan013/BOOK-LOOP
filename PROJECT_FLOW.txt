@@ -66,8 +66,9 @@ Typical demo flow (two users, e.g. Alice + Bob):
 -------------------------------------
 - model/: User (+rewardPoints), Book (+currentAddress, category),
   BorrowRequest (+status enum), Notification, RequestStatus enum.
-- dao/DatabaseManager.java: creates bookloop.db, tables + FKs, seed demo
-  users/books, ALTER TABLE migrations for existing DBs.
+- dao/DatabaseManager.java: creates bookloop.db, tables + FKs, empty tables
+  on first run (no hardcoded users/books), ALTER TABLE migrations for
+  existing DBs.
 - dao/AbstractDAO.java + CrudRepository.java: OOP showcase (abstract class
   + generic interface); BookDAO extends/implements them.
 - service/AuthService.java: register/login, signup bonus via RewardPolicy.

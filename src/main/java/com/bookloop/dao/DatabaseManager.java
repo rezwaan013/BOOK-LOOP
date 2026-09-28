@@ -1,7 +1,5 @@
 package com.bookloop.dao;
 
-import com.bookloop.util.PasswordUtil;
-
 import java.sql.*;
 import java.util.logging.Logger;
 
@@ -134,60 +132,9 @@ public class DatabaseManager {
         LOGGER.info("Schema verified.");
     }
 
-    /** Inserts demo users + books only if the users table is empty. */
+    /** No seed data — the app starts with empty tables; users register fresh. */
     private void seedData() throws SQLException {
-        try (Statement st = connection.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM users")) {
-            if (rs.getInt(1) > 0) return;  // already seeded
-        }
-
-        // Three demo users — all share password: Password1!
-        String[][] userData = {
-            {"Alice Johnson",  "+1-555-0101", "alice@bookloop.com"},
-            {"Bob Smith",      "+1-555-0102", "bob@bookloop.com"},
-            {"Charlie Brown",  "+1-555-0103", "charlie@bookloop.com"}
-        };
-        int[] ids = new int[3];
-        String insertUser = "INSERT INTO users(full_name, phone, email, password_hash, salt) VALUES(?,?,?,?,?)";
-        for (int i = 0; i < userData.length; i++) {
-            String salt = PasswordUtil.generateSalt();
-            String hash = PasswordUtil.hash("Password1!", salt);
-            try (PreparedStatement ps = connection.prepareStatement(insertUser, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setString(1, userData[i][0]);
-                ps.setString(2, userData[i][1]);
-                ps.setString(3, userData[i][2]);
-                ps.setString(4, hash);
-                ps.setString(5, salt);
-                ps.executeUpdate();
-                try (ResultSet k = ps.getGeneratedKeys()) { ids[i] = k.getInt(1); }
-            }
-        }
-
-        // Four demo books
-        Object[][] books = {
-            {ids[0], "The Great Gatsby",        "F. Scott Fitzgerald", "Scribner",              "9780743273565",
-             "A story of the fabulously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan.", null},
-            {ids[0], "To Kill a Mockingbird",   "Harper Lee",          "J. B. Lippincott & Co.","9780061935466",
-             "An unforgettable novel of a childhood in a sleepy Southern town and the crisis of conscience that rocked it.", null},
-            {ids[1], "1984",                    "George Orwell",       "Secker & Warburg",      "9780451524935",
-             "A dystopian novel set in a totalitarian state ruled by the omnipresent Big Brother.", null},
-            {ids[2], "The Hobbit",              "J.R.R. Tolkien",      "George Allen & Unwin",  "9780618260300",
-             "A fantasy novel about the quest of home-loving hobbit Bilbo Baggins.", null}
-        };
-        String insertBook = "INSERT INTO books(owner_id,title,author,publisher,isbn,description,cover_url) VALUES(?,?,?,?,?,?,?)";
-        for (Object[] b : books) {
-            try (PreparedStatement ps = connection.prepareStatement(insertBook)) {
-                ps.setInt(1,    (int) b[0]);
-                ps.setString(2, (String) b[1]);
-                ps.setString(3, (String) b[2]);
-                ps.setString(4, (String) b[3]);
-                ps.setString(5, (String) b[4]);
-                ps.setString(6, (String) b[5]);
-                ps.setString(7, (String) b[6]);
-                ps.executeUpdate();
-            }
-        }
-        LOGGER.info("Seed data inserted (3 users, 4 books).");
+        // Intentionally empty: previously inserted demo users/books here.
     }
 
     /** Closes the database connection cleanly. */

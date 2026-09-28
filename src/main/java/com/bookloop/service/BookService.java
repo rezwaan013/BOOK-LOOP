@@ -37,7 +37,8 @@ public class BookService {
     }
 
     /**
-     * Full variant carrying optional cover/description metadata.
+     * Full variant carrying optional cover/description metadata
+     * (e.g. auto-filled from the Open Library API).
      */
     public Book addBook(int ownerId, String title, String author,
                         String publisher, String currentAddress, String category,

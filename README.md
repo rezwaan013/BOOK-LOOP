@@ -5,7 +5,7 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 ## Features
 - **Authentication**: Secure registration and login with hashed passwords.
 - **Book Management**: Add your own books or browse books from others.
-- **Book Management**: Add your own books or browse books from others.
+- **API Integration**: Auto-fill book details by title via the Open Library API.
 - **Reward Points**: +50 signup, +10 per book added, 1 pt/day borrow cost, with live popups.
 - **Borrow Requests**: Request books for 7, 14, or 21 days with owner approval workflow.
 - **Real-time Notifications**: Background polling for incoming borrow requests.
@@ -16,6 +16,7 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 - **JavaFX** (GUI)
 - **Maven** (Build Tool)
 - **SQLite** (Database)
+- **Jackson** (JSON Parsing)
 
 ## Setup and Installation
 
@@ -55,7 +56,7 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 
 ### 2. JavaFX UI Design (panes + controls showcase)
 - **Panes**: `BorderPane` (dashboard shell), `StackPane` (toast overlay + notification badge), `AnchorPane` (content area), `VBox`/`HBox` (forms, cards), `ScrollPane` (book lists), `TabPane` (incoming/outgoing requests), `Region` spacers, `Separator`.
-- **Controls**: `TextField`, `PasswordField` (login/register), `ComboBox` (duration, category), `Button`, `Hyperlink` (login↔register links), `Label` (incl. badge labels), `Alert` dialogs (confirm/info/error via `AlertUtil`).
+- **Controls**: `TextField`, `PasswordField` (login/register), `ComboBox` (duration, category), `Button`, `Hyperlink` (login↔register links), `Label` (incl. badge labels), `ProgressIndicator` (auto-fill spinner), `Alert` dialogs (confirm/info/error via `AlertUtil`).
 
 ### 3. Layout Responsiveness
 - `NavigationUtil.loadInto()` pins loaded views to all four `AnchorPane` edges so content stretches with the window.
@@ -66,6 +67,7 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 ### 4. Concurrency (multi-threading + thread pools)
 - `util/NotificationPoller.java` — `ScheduledExecutorService` single-thread pool, daemon thread, ticks every 5s; UI updates via `Platform.runLater()`; clean `shutdown()` on logout/app close.
 - Live multi-window feel: keep browsing while a borrow-request notification or points change pops up as a toast overlay (`util/ToastUtil.java` + `toastBox` in `dashboard.fxml`).
+- `MyBooksController.networkPool` — cached `ExecutorService` pool for the Open Library auto-fill HTTP call, results marshalled back with `Platform.runLater()` + `ProgressIndicator`.
 
 ### 5. Database Integration (SQLite)
 - `dao/DatabaseManager.java` — singleton, one reusable `Connection` (`jdbc:sqlite:bookloop.db`), `PRAGMA foreign_keys = ON`, auto-creates empty schema on first run, `ALTER TABLE` migrations for existing DBs.
@@ -81,5 +83,6 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 | Update | `updateAvailability()` (accept/return), `UserDAO.addPoints()`, `updateStatus()`, `markRead/markAllRead` |
 | Delete | `BookDAO.deleteById()` via `BookService.deleteBook()` (owner-only, blocked while borrowed) + Delete button on My Library cards |
 
-### 7. Manual Data Entry (no external API)
-- All book data is entered manually through the Add Book form (title, author, publisher, address, category). No network calls or external API dependencies.
+### 7. Networking & Data Parsing
+- `service/BookApiService.java` — Java `HttpClient` GET to `https://openlibrary.org/search.json?title=...&limit=1`, parses JSON with Jackson (`ObjectMapper` → `docs[0]` → publisher, `cover_i` → cover URL, `first_publish_year`).
+- Demo: My Library → `+ Add Book` → type Title → **Auto-fill from Open Library** → publisher/cover filled in (runs on a background thread pool, spinner shown, graceful fallback offline).

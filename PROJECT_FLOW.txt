@@ -8,6 +8,7 @@ BookLoop — Functionalities, Flow & System Architecture
   New accounts start with 50 reward points (signup bonus).
 - My Library: logged-in users add books they own (title, author, publisher,
   current address, category). Each added book earns +10 points.
+  "Auto-fill from Open Library" fetches publisher/cover by title over HTTP.
   Owners can delete their own books (blocked while a book is borrowed).
 - Browse Books: lists available books owned by OTHER users, with text search
   (title/author) + category filter (Academic, Fiction, Non Fiction, History, Others).
@@ -25,7 +26,7 @@ BookLoop — Functionalities, Flow & System Architecture
 2. SCREEN FLOW (user journey)
 ----------------------------
 Login/Register --> Dashboard (sidebar shell)
-  |-- My Library   (add books, delete, view own books)
+  |-- My Library   (add books, auto-fill, delete, view own books)
   |-- Browse Books (search/filter, request to borrow, pay points)
   |-- Requests     (Incoming tab = accept/decline; Outgoing tab = return)
   |-- Notifications (read list, mark all read)
@@ -47,7 +48,7 @@ Typical demo flow (two users, e.g. Alice + Bob):
         |
   Services (service/)        -- business rules, no SQL here
   (AuthService, BookService, BorrowService, NotificationService,
-   RewardPolicy/StandardRewardPolicy for points)
+   BookApiService for HTTP, RewardPolicy/StandardRewardPolicy for points)
         |
   DAOs (dao/)                -- all SQL, PreparedStatements only
   (UserDAO, BookDAO, BorrowRequestDAO, NotificationDAO on top of
@@ -72,14 +73,16 @@ Typical demo flow (two users, e.g. Alice + Bob):
 - dao/AbstractDAO.java + CrudRepository.java: OOP showcase (abstract class
   + generic interface); BookDAO extends/implements them.
 - service/AuthService.java: register/login, signup bonus via RewardPolicy.
+- service/BookApiService.java: HttpClient + Jackson JSON parsing of
+  Open Library search.json (publisher, cover_i, first_publish_year).
 - service/BookService.java: add/delete/search books, +10 pts per book.
 - service/BorrowService.java: request/accept/decline/return, deducts
   costToBorrow(duration) points, creates notifications.
 - controller/LoginController, RegisterController: auth screens.
 - controller/DashboardController: sidebar shell, points badge, live toast
   overlay (notification + points watchers), responsive width binding.
-- controller/MyBooksController: add form (category dropdown, address box),
-  book cards with Delete button.
+- controller/MyBooksController: add form (category dropdown, address box,
+  auto-fill on a thread pool), book cards with Delete button.
 - controller/BrowseController: search + category filter, borrow with
   cost confirm + deduction popup.
 - controller/RequestsController: incoming accept/decline, outgoing return.
@@ -92,6 +95,8 @@ Typical demo flow (two users, e.g. Alice + Bob):
 --------------------------------
 - NotificationPoller: single-thread ScheduledExecutorService (daemon),
   5s tick, Platform.runLater() UI updates, clean shutdown.
+- MyBooksController.networkPool: cached ExecutorService for the
+  Open Library HTTP call; spinner + fallback message on failure.
 
 6. DATABASE TABLES & RELATIONSHIPS
 ----------------------------------

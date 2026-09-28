@@ -18,6 +18,12 @@
         <TextField fx:id="publisherField" promptText="Publisher"/>
         <TextField fx:id="addressField" promptText="Current Address (e.g. SSH, KUET)"/>
         <ComboBox fx:id="categoryComboBox" promptText="Category" maxWidth="Infinity"/>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button text="Auto-fill from Open Library" onAction="#handleAutoFill"/>
+            <ProgressIndicator fx:id="fetchSpinner" visible="false" mouseTransparent="true"
+                               prefWidth="24" prefHeight="24" maxWidth="24" maxHeight="24"/>
+            <Label fx:id="fetchLabel" styleClass="book-meta"/>
+        </HBox>
         <Label fx:id="statusLabel" styleClass="error-label"/>
         <Button text="Save Book (+10 pts)" onAction="#handleAddBook" styleClass="primary-button"/>
         <Separator/>

@@ -15,7 +15,7 @@
             <VBox.margin><Insets top="36" bottom="4"/></VBox.margin>
             <Label text="📚" style="-fx-font-size: 52px;"/>
             <Label text="BookLoop" styleClass="app-title"/>
-            <Label text="Peer-to-Peer Book Lending" styleClass="app-subtitle"/>
+            <Label text="Borrow, Read, Return, Repeat" styleClass="app-subtitle"/>
         </VBox>
 
         <!-- Form Fields -->

@@ -74,7 +74,8 @@ Typical demo flow (two users, e.g. Alice + Bob):
   + generic interface); BookDAO extends/implements them.
 - service/AuthService.java: register/login, signup bonus via RewardPolicy.
 - service/BookApiService.java: HttpClient + Jackson JSON parsing of
-  Open Library search.json (publisher, cover_i, first_publish_year).
+  Open Library search.json (publisher, cover_i, first_publish_year),
+  with bundled books.json catalog as fallback.
 - service/BookService.java: add/delete/search books, +10 pts per book.
 - service/BorrowService.java: request/accept/decline/return, deducts
   costToBorrow(duration) points, creates notifications.

@@ -11,11 +11,14 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * Fetches book metadata from the Open Library API by title.
+ * Fetches book metadata from the Open Library API by title, with a
+ * bundled local catalog (/books.json) as fallback.
  * Demonstrates networking (Java HttpClient) + JSON parsing
- * (Jackson ObjectMapper / JsonNode).
- * Endpoint: https://openlibrary.org/search.json?title=...&limit=1
- * All network failures fall back gracefully to manually entered data.
+ * (Jackson ObjectMapper / JsonNode) on both paths:
+ * online JSON from https://openlibrary.org/search.json and
+ * local JSON from the classpath.
+ * Resolution order: exact local-catalog match -> live API ->
+ * partial local-catalog match -> empty (fill manually).
  */
 public class BookApiService {
 
@@ -26,13 +29,67 @@ public class BookApiService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * Searches Open Library by title (and optionally author).
-     * HTTP GETs search.json, then parses docs[0] into publisher,
-     * cover image URL and first-publish year.
+     * Resolves book metadata for a title.
+     * Local catalog is checked first for exact title matches (fast,
+     * offline-safe); otherwise the live Open Library API is queried;
+     * otherwise a partial local match is tried.
      *
      * @return partially-filled Book, or empty on failure / no match
      */
     public Optional<Book> fetchByTitle(String title, String author) {
+        Optional<Book> local = findInCatalog(title, true);
+        if (local.isPresent()) return local;
+        Optional<Book> online = fetchFromApi(title, author);
+        if (online.isPresent()) return online;
+        return findInCatalog(title, false);
+    }
+
+    /** Loads the bundled /books.json catalog (Jackson parses local JSON). */
+    private java.util.List<JsonNode> loadCatalog() {
+        try (java.io.InputStream in = BookApiService.class.getResourceAsStream("/books.json")) {
+            if (in == null) return java.util.List.of();
+            JsonNode root = mapper.readTree(in);
+            if (root == null || !root.isArray()) return java.util.List.of();
+            java.util.List<JsonNode> list = new java.util.ArrayList<>();
+            root.forEach(list::add);
+            return list;
+        } catch (Exception e) {
+            LOGGER.warning("Failed to read bundled books.json: " + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    private static String norm(String s) {
+        return s == null ? "" : s.toLowerCase().replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * Searches the local catalog by title.
+     * @param exact true: normalized titles must equal; false: either contains the other
+     */
+    private Optional<Book> findInCatalog(String title, boolean exact) {
+        String q = norm(title);
+        if (q.isBlank()) return Optional.empty();
+        for (JsonNode e : loadCatalog()) {
+            String t = norm(e.path("title").asText(""));
+            boolean hit = exact ? t.equals(q) : (!t.isBlank() && (t.contains(q) || q.contains(t)));
+            if (!hit) continue;
+            Book book = new Book();
+            book.setPublisher(e.path("publisher").asText(""));
+            book.setDescription(e.path("description").asText(""));
+            String a = e.path("author").asText("");
+            if (!a.isBlank() && !a.equalsIgnoreCase("Unknown")) book.setAuthor(a);
+            return Optional.of(book);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Searches Open Library by title (and optionally author).
+     * HTTP GETs search.json, then parses the top docs into publisher,
+     * cover image URL and first-publish year.
+     */
+    private Optional<Book> fetchFromApi(String title, String author) {
         try {
             String q = "title=" + java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
             if (author != null && !author.isBlank())

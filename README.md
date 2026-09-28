@@ -84,5 +84,5 @@ BookLoop is a peer-to-peer book lending and borrowing application designed for u
 | Delete | `BookDAO.deleteById()` via `BookService.deleteBook()` (owner-only, blocked while borrowed) + Delete button on My Library cards |
 
 ### 7. Networking & Data Parsing
-- `service/BookApiService.java` — Java `HttpClient` GET to `https://openlibrary.org/search.json?title=...&limit=1`, parses JSON with Jackson (`ObjectMapper` → `docs[0]` → publisher, `cover_i` → cover URL, `first_publish_year`).
-- Demo: My Library → `+ Add Book` → type Title → **Auto-fill from Open Library** → publisher/cover filled in (runs on a background thread pool, spinner shown, graceful fallback offline).
+- `service/BookApiService.java` — Java `HttpClient` GET to `https://openlibrary.org/search.json?title=...&limit=5`, parses JSON with Jackson (`ObjectMapper` → `docs[]` → publisher, `cover_i` → cover URL, `first_publish_year`). Exact title matches are served from the bundled `resources/books.json` catalog first (same Jackson parsing), then the live API, then a partial catalog match.
+- Demo: My Library → `+ Add Book` → type Title → **Auto-fill from Open Library** → publisher/cover filled in (runs on a background thread pool, spinner shown, graceful fallback offline). The status message names the source ("Open Library" vs "local catalog").

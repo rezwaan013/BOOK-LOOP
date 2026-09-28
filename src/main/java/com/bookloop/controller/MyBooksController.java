@@ -91,7 +91,7 @@ public class MyBooksController {
         }
     }
 
-    /** Fetches publisher/cover from Open Library on a background thread. */
+    /** Auto-fills publisher/cover: local catalog first, else Open Library API. */
     @FXML
     private void handleAutoFill() {
         String title = titleField.getText().trim();
@@ -102,7 +102,7 @@ public class MyBooksController {
             return;
         }
         fetchSpinner.setVisible(true);
-        fetchLabel.setText("Contacting openlibrary.org...");
+        fetchLabel.setText("Looking up book details...");
         networkPool.submit(() -> {
             var opt = apiService.fetchByTitle(title, author);
             Platform.runLater(() -> {
@@ -114,9 +114,12 @@ public class MyBooksController {
                         publisherField.setText(api.getPublisher());
                     fetchedCoverUrl = api.getCoverUrl();
                     fetchedDescription = api.getDescription();
+                    String source = api.getDescription() != null
+                            && api.getDescription().contains("local catalog")
+                            ? "local catalog" : "Open Library";
                     String found = api.getPublisher() != null && !api.getPublisher().isBlank()
                             ? "Publisher: " + api.getPublisher() : "Details found";
-                    fetchLabel.setText("Found on Open Library (" + found + ") — will be saved with the book.");
+                    fetchLabel.setText("Found via " + source + " (" + found + ") — will be saved with the book.");
                     statusLabel.setVisible(false);
                 } else {
                     fetchLabel.setText("No match found — fill in manually.");
